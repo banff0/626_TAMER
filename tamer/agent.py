@@ -24,8 +24,10 @@ class SGDFunctionApproximator:
         
         # Feature preprocessing: Normalize to zero mean and unit variance
         # We use a few samples from the observation space to do this
+        # print(env.observation_space.sample())
+
         observation_examples = np.array(
-            [env.observation_space.sample() for _ in range(10000)], dtype='float64'
+            [env.observation_space.sample()["observation"] for _ in range(10000)], dtype='float64'
         )
         self.scaler = preprocessing.StandardScaler()
         self.scaler.fit(observation_examples)
@@ -43,9 +45,11 @@ class SGDFunctionApproximator:
         self.featurizer.fit(self.scaler.transform(observation_examples))
 
         self.models = []
+        print(env.action_space)
         for _ in range(env.action_space.n):
             model = SGDRegressor(learning_rate='constant')
-            model.partial_fit([self.featurize_state(env.reset()[0])], [0])
+            print(env.reset())
+            model.partial_fit([self.featurize_state(env.reset()[0]["observation"])], [0])
             self.models.append(model)
 
     def predict(self, state, action=None):
@@ -130,7 +134,9 @@ class Tamer:
         print(f'Episode: {episode_index + 1}  Timestep:', end='')
         rng = np.random.default_rng()
         tot_reward = 0
-        state, info = self.env.reset()
+        # state, info = self.env.reset()
+        state = self.env.reset()[0]["observation"]
+        print("HEREHERHEH")
         ep_start_time = dt.datetime.now().time()
         with open(self.reward_log_path, 'a+', newline='') as write_obj:
             dict_writer = DictWriter(write_obj, fieldnames=self.reward_log_columns)
@@ -145,8 +151,10 @@ class Tamer:
                     self.env.render()
 
                 # Get next state and reward
+                print(action)
                 next_state, reward, done, trunc, info = self.env.step(action)
                 done = done or trunc
+                next_state = next_state["observation"]
 
                 if not self.tame:
                     if done and next_state[0] >= 0.5:
@@ -161,7 +169,7 @@ class Tamer:
                     # while time.time() < now + self.ts_len:
                     frame = None
 
-                    # time.sleep(0.01)  # save the CPU
+                    time.sleep(0.1)  # save the CPU
 
                     human_reward = disp.get_scalar_feedback()
                     feedback_ts = dt.datetime.now().time()
@@ -198,6 +206,7 @@ class Tamer:
         """
         # render first so that pygame display shows up on top
         self.env.render()
+        print("HERHE")
         disp = None
         if self.tame:
             # only init pygame display if we're actually training tamer
@@ -224,13 +233,15 @@ class Tamer:
         self.epsilon = 0
         ep_rewards = []
         for i in range(n_episodes):
-            state, info = self.env.reset()
+            state = self.env.reset()[0]["observation"]
+            # state, info = self.env.reset()
             done = False
             tot_reward = 0
             while not done:
                 action = self.act(state)
                 next_state, reward, done, trunc, info = self.env.step(action)
                 done = done or trunc
+                next_state = next_state["observation"]
                 tot_reward += reward
                 if render:
                     self.env.render()

@@ -4,13 +4,17 @@ When training, use 'W' and 'A' keys for positive and negative rewards
 """
 
 import asyncio
+import highway_env
 import gymnasium as gym
 
 from tamer.agent import Tamer
 
 
 async def main():
-    env = gym.make('MountainCar-v0', render_mode="human")
+    env = gym.make('parking-v0', render_mode="human", config={
+    "action": {
+        "type": "DiscreteAction"
+    }})
 
     # hyperparameters
     discount_factor = 1

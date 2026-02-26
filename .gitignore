@@ -1,0 +1,7 @@
+/venv/
+/tamer/logs/*
+/tamer/saved_models/*
+
+
+!/tamer/saved_models/example_pre_tratined_model.p
+!tamer/logs/example_log.csv
