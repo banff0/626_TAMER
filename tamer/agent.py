@@ -45,7 +45,7 @@ class SGDFunctionApproximator:
         self.models = []
         for _ in range(env.action_space.n):
             model = SGDRegressor(learning_rate='constant')
-            model.partial_fit([self.featurize_state(env.reset())], [0])
+            model.partial_fit([self.featurize_state(env.reset()[0])], [0])
             self.models.append(model)
 
     def predict(self, state, action=None):
@@ -130,22 +130,23 @@ class Tamer:
         print(f'Episode: {episode_index + 1}  Timestep:', end='')
         rng = np.random.default_rng()
         tot_reward = 0
-        state = self.env.reset()
+        state, info = self.env.reset()
         ep_start_time = dt.datetime.now().time()
         with open(self.reward_log_path, 'a+', newline='') as write_obj:
             dict_writer = DictWriter(write_obj, fieldnames=self.reward_log_columns)
             dict_writer.writeheader()
             for ts in count():
-                print(f' {ts}', end='')
-                self.env.render()
+                print(f' {ts}')
 
                 # Determine next action
                 action = self.act(state)
                 if self.tame:
-                    disp.show_action(action)
+                    # disp.show_action(action)
+                    self.env.render()
 
                 # Get next state and reward
-                next_state, reward, done, info = self.env.step(action)
+                next_state, reward, done, trunc, info = self.env.step(action)
+                done = done or trunc
 
                 if not self.tame:
                     if done and next_state[0] >= 0.5:
@@ -157,32 +158,32 @@ class Tamer:
                     self.Q.update(state, action, td_target)
                 else:
                     now = time.time()
-                    while time.time() < now + self.ts_len:
-                        frame = None
+                    # while time.time() < now + self.ts_len:
+                    frame = None
 
-                        time.sleep(0.01)  # save the CPU
+                    # time.sleep(0.01)  # save the CPU
 
-                        human_reward = disp.get_scalar_feedback()
-                        feedback_ts = dt.datetime.now().time()
-                        if human_reward != 0:
-                            dict_writer.writerow(
-                                {
-                                    'Episode': episode_index + 1,
-                                    'Ep start ts': ep_start_time,
-                                    'Feedback ts': feedback_ts,
-                                    'Human Reward': human_reward,
-                                    'Environment Reward': reward
-                                }
-                            )
-                            self.H.update(state, action, human_reward)
-                            break
+                    human_reward = disp.get_scalar_feedback()
+                    feedback_ts = dt.datetime.now().time()
+                    if human_reward != 0:
+                        dict_writer.writerow(
+                            {
+                                'Episode': episode_index + 1,
+                                'Ep start ts': ep_start_time,
+                                'Feedback ts': feedback_ts,
+                                'Human Reward': human_reward,
+                                'Environment Reward': reward
+                            }
+                        )
+                        self.H.update(state, action, human_reward)
+                        # break
 
                 tot_reward += reward
                 if done:
                     print(f'  Reward: {tot_reward}')
                     break
 
-                stdout.write('\b' * (len(str(ts)) + 1))
+                # stdout.write('\b' * (len(str(ts)) + 1))
                 state = next_state
 
         # Decay epsilon
@@ -207,7 +208,7 @@ class Tamer:
             self._train_episode(i, disp)
 
         print('\nCleaning up...')
-        self.env.close()
+        # self.env.close()
         if model_file_to_save is not None:
             self.save_model(filename=model_file_to_save)
 
@@ -223,19 +224,20 @@ class Tamer:
         self.epsilon = 0
         ep_rewards = []
         for i in range(n_episodes):
-            state = self.env.reset()
+            state, info = self.env.reset()
             done = False
             tot_reward = 0
             while not done:
                 action = self.act(state)
-                next_state, reward, done, info = self.env.step(action)
+                next_state, reward, done, trunc, info = self.env.step(action)
+                done = done or trunc
                 tot_reward += reward
                 if render:
                     self.env.render()
                 state = next_state
             ep_rewards.append(tot_reward)
             print(f'Episode: {i + 1} Reward: {tot_reward}')
-        self.env.close()
+        # self.env.close()
         return ep_rewards
 
     def evaluate(self, n_episodes=100):

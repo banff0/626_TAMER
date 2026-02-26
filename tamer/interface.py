@@ -14,9 +14,9 @@ class Interface:
         os.environ["SDL_VIDEO_WINDOW_POS"] = "1000,100"
         os.environ["SDL_VIDEO_CENTERED"] = "0"
 
-        self.screen = pygame.display.set_mode((200, 100))
-        area = self.screen.fill((0, 0, 0))
-        pygame.display.update(area)
+        # self.screen = pygame.display.set_mode((200, 100))
+        # area = self.screen.fill((0, 0, 0))
+        # pygame.display.update(area)
 
     def get_scalar_feedback(self):
         """
@@ -28,14 +28,14 @@ class Interface:
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_w:
-                    area = self.screen.fill((0, 255, 0))
+                    # area = self.screen.fill((0, 255, 0))
                     reward = 1
                     break
                 elif event.key == pygame.K_a:
-                    area = self.screen.fill((255, 0, 0))
+                    # area = self.screen.fill((255, 0, 0))
                     reward = -1
                     break
-        pygame.display.update(area)
+        # pygame.display.update(area)
         return reward
 
     def show_action(self, action):
